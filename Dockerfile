@@ -1,4 +1,4 @@
-FROM ghcr.io/aquasecurity/trivy:0.38.2 as trivy
+FROM ghcr.io/aquasecurity/trivy:latest as trivy
 
 
 FROM trivy as scanner
@@ -7,12 +7,12 @@ COPY . /tmp/app
 RUN trivy  fs --exit-code 1 --security-checks vuln,config /tmp/app/Dockerfile > /tmp/Dockerfile-report.log && \
     cat /tmp/Dockerfile-report.log
 
-FROM docker.io/library/gradle:8-jdk17-alpine AS jre
+FROM docker.io/library/gradle:8.13.0-jdk21-alpine AS jre
 COPY java.modules /tmp/java.modules
 RUN apk add binutils # for objcopy, needed by jlink
 RUN jlink --strip-debug --add-modules $(cat /tmp/java.modules) --output /root/java
 
-FROM docker.io/library/gradle:8-jdk17-alpine AS builder
+FROM docker.io/library/gradle:8.13.0-jdk21-alpine AS builder
 ARG APP_VERSION
 ENV APP_VERSION=${APP_VERSION:-1.0.0}
 ARG USERNAME=gradle
@@ -29,7 +29,7 @@ RUN gradle --info clean build -Pversion=${APP_VERSION} && \
 
 # RUN jdeps --print-module-deps --ignore-missing-deps /home/$USERNAME/build/libs/spring-demo-${APP_VERSION}.jar > /home/$USERNAME/build/java.modules
 
-FROM docker.io/library/alpine:3.17 as base
+FROM docker.io/library/alpine:latest as base
 # FROM docker.io/library/ubuntu:22.04 as base
 ARG APP_VERSION
 ENV APP_VERSION=${APP_VERSION:-1.0.0}
